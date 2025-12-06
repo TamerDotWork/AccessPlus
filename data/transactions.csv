@@ -1,0 +1,8 @@
+txn_id,user_id,date,merchant,amount,category,type
+t_001,user_101,2023-12-01,Employer Direct Deposit,3000.00,Income,credit
+t_002,user_101,2023-12-02,Whole Foods,145.20,Groceries,debit
+t_003,user_101,2023-12-03,Uber,24.50,Transport,debit
+t_004,user_101,2023-12-04,Starbucks,6.75,Dining,debit
+t_005,user_101,2023-12-05,Netflix,15.99,Entertainment,debit
+t_006,user_102,2023-12-04,PlayStation Store,60.00,Entertainment,debit
+t_007,user_102,2023-12-05,McDonalds,12.50,Dining,debit

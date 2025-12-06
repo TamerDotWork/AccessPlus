@@ -1,0 +1,5 @@
+user_id,name,balance,currency,account_type
+user_101,Alice Smith,5420.50,USD,Checking
+user_102,Bob Jones,350.00,USD,Student
+mom_account,Martha Smith,15000.00,USD,Savings
+landlord_LLC,City Rentals Inc,50000.00,USD,Business

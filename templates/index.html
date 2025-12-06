@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <title>Banking Bot</title>
+ 
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">AccessPlus</div>
+    <div class="chat-box" id="chat-box">
+        <!-- Messages will appear here -->
+        <!-- <div class="message bot-msg intro">Hello! How can I help you today?</div> -->
+        <h1 class=" intro">Hello! <br>How can I help you today?</h1>
+    </div>
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Type a message..." onkeypress="handleEnter(event)">
+        <button onclick="sendMessage()" id="send-btn">Send</button>
+    </div>
+</div>
+
+
+
+<script>
+    async function sendMessage() {
+        const inputField = document.getElementById("user-input");
+        const chatBox = document.getElementById("chat-box");
+        const sendBtn = document.getElementById("send-btn");
+        const message = inputField.value.trim();
+
+        if (!message) return;
+
+        // 1. Add User Message to UI
+        addMessage(message, 'user-msg');
+        inputField.value = "";
+        sendBtn.disabled = true;
+
+        try {
+            // 2. Send to Flask Backend
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+            const data = await response.json();
+
+            // 3. Add Bot Response to UI
+            if (data.error) {
+                addMessage("Error: " + data.error, 'bot-msg');
+            } else {
+                addMessage(data.response, 'bot-msg');
+            }
+        } catch (error) {
+            addMessage("Network Error", 'bot-msg');
+        }
+
+        sendBtn.disabled = false;
+    }
+
+    function addMessage(text, className) {
+        const chatBox = document.getElementById("chat-box");
+        const div = document.createElement("div");
+        div.classList.add("message", className);
+        div.innerText = text;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll to bottom
+    }
+
+    function handleEnter(event) {
+        if (event.key === "Enter") sendMessage();
+    }
+</script>
+
+</body>
+</html>
