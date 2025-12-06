@@ -43,7 +43,7 @@ body {
 
 /* Messages Area */
 .chat-box {
-    border: 1px solid #ffffff17;
+ 
     flex: 1;
     padding: 15px;
     overflow-y: auto;
@@ -53,15 +53,32 @@ body {
 }
 
 .chat-container {
-    width: 400px;
+    width:1100px;
     display: flex;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, .0901960784);
+ 
     flex-direction: column;
     overflow: hidden;
  
 }
+.chat-box::-webkit-scrollbar {
+  width: 10px; /* Width of the vertical scrollbar */
+  height: 10px; /* Height of the horizontal scrollbar */
+}
 
+.chat-box::-webkit-scrollbar-track {
+      background-color: rgba(255, 255, 255, .0901960784);/* Color of the scrollbar track */
+  border-radius: 5px;
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, .0901960784);/* Color of the scrollbar track */
+  border-radius: 5px;
+}
+
+.chat-box::-webkit-scrollbar-thumb:hover {
+  background-color: #555; /* Color of the thumb on hover */
+}
 
 
 h1.intro {
@@ -74,8 +91,36 @@ input#user-input {
     padding: 16px 16px 16px 16px;
     border-radius: 6px;
     border: none;
+        width: 100%;
+ 
 }
-
+input#user-input::placeholder{
+ 
+     color: #666;
+}
+input#user-input:focus-visible {
+    outline:none!important;
+     background:  rgba(255, 255, 255, .0901960784);
+     color: #000;
+}
+input#user-input:focus-visible::placeholder {
+    color: #000;
+ 
+}
+#send-btn {
+    background: #000;
+    border: none;
+    color: #fff;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    text-align: center;
+    display: flex;
+    position: absolute;
+    right: 40px;
+    justify-content: center;
+    align-items: center;
+}
 .message.user-msg {
     font-size: 1rem;
     justify-content: flex-end;
@@ -137,12 +182,15 @@ div#chat-box {
 left: 0;
 right: 0;
 position: relative;
+    background: #00000017;   padding: 32px; border-radius: 8px;
 }
 .input-area {
-    background: #00000017;
-    padding: 32px;
+ background: #fff;
+   
+  width: 100%;
+    display: flex;
     border-radius: 8px;
-     width: 100%; 
+    align-items: center;
  
 }
 .col-4 {
