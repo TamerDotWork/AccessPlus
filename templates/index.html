@@ -5,21 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/css/style.css">
     <title>Banking Bot</title>
- 
+  
 </head>
 <body>
 
-<div class="chat-container">
-    <div class="chat-header">AccessPlus</div>
+<div class="container">
+        <div class="col-4"><div class="chat-header">AccessPlus</div></div>
+    <div class="col-4">
+        <div class="chat-container">
+
     <div class="chat-box" id="chat-box">
         <!-- Messages will appear here -->
         <!-- <div class="message bot-msg intro">Hello! How can I help you today?</div> -->
         <h1 class=" intro">Hello! <br>How can I help you today?</h1>
     </div>
-    <div class="input-area">
+   <div class="chat-bottom">
+     <div class="input-area">
         <input type="text" id="user-input" placeholder="Type a message..." onkeypress="handleEnter(event)">
         <button onclick="sendMessage()" id="send-btn">Send</button>
     </div>
+   </div>
+</div>
+    </div>
+        <div class="col-4"> </div>
 </div>
 
 
