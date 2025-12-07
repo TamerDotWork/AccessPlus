@@ -19,10 +19,11 @@ html {
     font-size: 10px;
     font-family: "Lato", sans-serif;
     height: 100%;
+        font-size: 16px;
 }
 
 body {
-    line-height: 100%;
+    line-height: 1rem;
     font-size: 1rem;
     height: 100%;
     width: 100%;
@@ -31,7 +32,7 @@ body {
     background-size: cover;
     padding: 0;
     margin: 0;
-    font-size: 16px;
+    font-size: 1rem;
     display: flex;
     justify-content: center;
 
@@ -85,11 +86,17 @@ h1.intro {
     font-size: 18px;
     color: #fff;
     line-height: 2rem;
+ 
+  background-image:linear-gradient(315deg, #FFFFFF 90%, #ababab 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
 }
 
 input#user-input {
     padding: 16px 16px 16px 16px;
-    border-radius: 6px;
+     border-radius: 50px ;
     border: none;
         width: 100%;
  
@@ -107,8 +114,16 @@ input#user-input:focus-visible::placeholder {
     color: #000;
  
 }
+a.logo svg {
+    height: 36px;
+}
+a.logo {
+    /* height: 80px; */
+    margin-top: 16px;
+    display: block;
+}
 #send-btn {
-    background: #000;
+  background: #000;
     border: none;
     color: #fff;
     border-radius: 50%;
@@ -117,9 +132,21 @@ input#user-input:focus-visible::placeholder {
     text-align: center;
     display: flex;
     position: absolute;
-    right: 40px;
+    right: 48px;
     justify-content: center;
     align-items: center;
+}
+.disabled-btn {
+    pointer-events: none; /* disables clicking */
+    opacity: 0.5;         /* make it look disabled */
+    cursor: default;
+}
+
+/* Optional: enabled state */
+#send-btn.enabled-btn {
+    pointer-events: auto;
+    opacity: 1;
+    cursor: pointer;
 }
 .message.user-msg {
     font-size: 1rem;
@@ -173,8 +200,12 @@ div#chat-box {
     align-self: self-start;
     /* Add animation property */
     animation: slideIn 0.1s forwards;
-    /* 0.5s duration, stays at end state */
-
+ 
+  backdrop-filter: blur(10px); /* Blurs the content behind the element */
+ 
+  border: 1px solid rgba(255, 255, 255, 0.18); /* Subtle, transparent border */
+     padding-top: 8px;
+    padding-bottom: 16px;
 }
 .chat-bottom {
     position: absolute;
@@ -182,15 +213,16 @@ div#chat-box {
 left: 0;
 right: 0;
 position: relative;
-    background: #00000017;   padding: 32px; border-radius: 8px;
+    background: #00000017;   padding: 32px; border-radius: 90px;
 }
 .input-area {
  background: #fff;
    
   width: 100%;
     display: flex;
-    border-radius: 8px;
+    border-radius: 50px  ;
     align-items: center;
+    padding:8px 0px 8px 0px;
  
 }
 .col-4 {

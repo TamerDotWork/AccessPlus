@@ -1,13 +1,15 @@
 import os
-from dotenv import load_dotenv
 import sys
+from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.prebuilt import create_react_agent
 from langgraph.graph import StateGraph, END, MessagesState
 from langchain_core.messages import SystemMessage
 
-from tools import get_my_balance, get_my_transactions, get_bank_policies
+# --- NEW: Import Memory ---
+from langgraph.checkpoint.memory import MemorySaver 
 
+from tools import get_my_balance, get_my_transactions, get_bank_policies
 
 load_dotenv()
 if "GOOGLE_API_KEY" not in os.environ:
@@ -17,11 +19,11 @@ if "GOOGLE_API_KEY" not in os.environ:
 api_key = os.environ.get("GOOGLE_API_KEY")
  
 llm = ChatGoogleGenerativeAI(
-    model="gemini-flash-latest", 
+    model="gemini-flash-latest", # Or "gemini-flash-latest"
     temperature=0
 )
-# --- 2. DEFINE AGENTS (Clean) ---
-# We remove the controversial 'modifier' argument entirely.
+
+# --- 2. DEFINE AGENTS ---
 account_agent = create_react_agent(llm, tools=[get_my_balance, get_my_transactions])
 info_agent = create_react_agent(llm, tools=[get_bank_policies])
 
@@ -89,18 +91,14 @@ def supervisor_node(state: MessagesState):
     if "ACCOUNT" in choice: return {"next": "ACCOUNT"}
     return {"next": "INFO"}
 
-# --- 4. WRAPPERS (System Message Injection) ---
+# --- 4. WRAPPERS ---
 def call_account(state: MessagesState):
-    # Manually prepend the System Message
     messages = [SystemMessage(content=ACCOUNT_PROMPT)] + state['messages']
-    
     result = account_agent.invoke({"messages": messages})
     return {"messages": [result['messages'][-1]]}
 
 def call_info(state: MessagesState):
-    # Manually prepend the System Message
     messages = [SystemMessage(content=INFO_PROMPT)] + state['messages']
-    
     result = info_agent.invoke({"messages": messages})
     return {"messages": [result['messages'][-1]]}
 
@@ -125,4 +123,6 @@ workflow.add_conditional_edges(
 workflow.add_edge("account_bot", END)
 workflow.add_edge("info_bot", END)
 
-app_graph = workflow.compile()
+# --- NEW: COMPILE WITH MEMORY ---
+memory = MemorySaver()
+app_graph = workflow.compile(checkpointer=memory)

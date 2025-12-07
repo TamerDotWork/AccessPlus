@@ -1,37 +1,67 @@
-from flask import Flask, render_template, request, jsonify
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
-from brain import app_graph 
+from brain import app_graph
+import uvicorn
 
-app = Flask(__name__)
+# --- FastAPI app ---
+app = FastAPI()
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+# --- Serve templates ---
+templates = Jinja2Templates(directory="templates")
 
-@app.route('/chat', methods=['POST'])
-def chat():
-    user_data = request.json
-    user_message = user_data.get('message', '')
+# --- Serve static files if any ---
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-    # Guard: Prevent empty strings sending to Gemini
-    if not user_message.strip():
-        return jsonify({"response": "Please type a valid message."})
+# --- Helper: clean response content ---
+def clean_content(content):
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        text_parts = []
+        for part in content:
+            if isinstance(part, dict) and 'text' in part:
+                text_parts.append(part['text'])
+            else:
+                text_parts.append(str(part))
+        return " ".join(text_parts)
+    return str(content)
+
+# --- Pydantic model for incoming JSON ---
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str = "user_session_101"
+
+# --- Routes ---
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.post("/chat")
+async def chat_endpoint(chat_request: ChatRequest):
+    user_message = chat_request.message.strip()
+    thread_id = chat_request.session_id
+
+    if not user_message:
+        return JSONResponse(content={"response": "Please type a valid message."})
 
     try:
-        # Create the HumanMessage object
         input_msg = HumanMessage(content=user_message)
-        
-        # Invoke Graph
-        result = app_graph.invoke({"messages": [input_msg]})
-        
-        # Get last message
-        final_response = result['messages'][-1].content
-        
-        return jsonify({"response": final_response})
-        
-    except Exception as e:
-        print(f"Server Error: {e}") # Look at your terminal for details
-        return jsonify({"error": str(e)}), 500
+        config = {"configurable": {"thread_id": thread_id}}
+        result = app_graph.invoke({"messages": [input_msg]}, config=config)
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+        raw_content = result['messages'][-1].content
+        final_response = clean_content(raw_content)
+
+        return JSONResponse(content={"response": final_response})
+
+    except Exception as e:
+        print(f"Server Error: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# --- Run app ---
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
