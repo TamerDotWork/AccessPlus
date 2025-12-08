@@ -85,7 +85,7 @@
 
         try {
             // 2. Send to Flask Backend
-            const response = await fetch('/chat', {
+            const response = await fetch('chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: message })
