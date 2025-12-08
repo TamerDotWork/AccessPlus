@@ -106,5 +106,9 @@ async def chat_endpoint(chat_request: ChatRequest):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     # Run with command: python app.py
     uvicorn.run("app:app", host="0.0.0.0", port=5000, reload=True)
+=======
+    uvicorn.run("app:app", host="0.0.0.0", port=5009, reload=True)
+>>>>>>> a37c307274a011f2bc59598176bf8c5e2e866be4
