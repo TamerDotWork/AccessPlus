@@ -10,14 +10,14 @@ from typing import Optional, List
 from langchain_core.messages import HumanMessage
 import uvicorn
 
-# Import the compiled graph from brain.py
+
 from brain import app_graph
 
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
-# Ensure static directory exists
+
 if not os.path.exists("static"):
     os.makedirs("static")
 if not os.path.exists("static/css"):
@@ -25,9 +25,7 @@ if not os.path.exists("static/css"):
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# ---------------------------------------------------------
-# 1. LOAD CSV LOGIC
-# ---------------------------------------------------------
+
 FLOW_TREE = defaultdict(dict)
 
 def load_csv_flow():
@@ -57,17 +55,15 @@ def load_csv_flow():
                     "next_step": next_id
                 })
 
-# Load immediately on startup
+
 load_csv_flow()
 
-# ---------------------------------------------------------
-# 2. DATA MODELS & HELPERS
-# ---------------------------------------------------------
+
 
 class ChatRequest(BaseModel):
     message: Optional[str] = ""
     session_id: str = "user_session_101"
-    current_step_id: Optional[str] = None  # Tracks CSV flow state
+    current_step_id: Optional[str] = None  
 
 def clean_content(content):
     """Helper to extract clean text from LangChain message."""
@@ -83,13 +79,11 @@ def clean_content(content):
         return " ".join(text_parts)
     return str(content)
 
-# ---------------------------------------------------------
-# 3. ENDPOINTS
-# ---------------------------------------------------------
+
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    # Pass the 'start' step data to render initial buttons if needed
+
     start_data = FLOW_TREE.get("start", {})
     return templates.TemplateResponse("index.html", {
         "request": request, 
@@ -103,27 +97,25 @@ async def chat_endpoint(chat_request: ChatRequest):
     step_id = chat_request.current_step_id
     thread_id = chat_request.session_id
 
-    # --- SCENARIO A: CSV FLOW NAVIGATION ---
-    # If the request contains a step_id (from a button click), prioritize CSV logic
+    
     if step_id and step_id in FLOW_TREE:
         node_data = FLOW_TREE[step_id]
         
-        # Check if this is a "Handover" node (switch to AI)
+       
         if step_id == "agent_handover":
              return JSONResponse(content={
                 "response": node_data['message'],
-                "options": [], # No buttons, enable text input
-                "next_step": None # Exit CSV flow
+                "options": [], 
+                "next_step": None 
             })
 
         return JSONResponse(content={
             "response": node_data['message'],
             "options": node_data['options'],
-            "next_step": None # The frontend will send the *next* ID when clicked
+            "next_step": None 
         })
 
-    # --- SCENARIO B: AI AGENT (LangGraph) ---
-    # If no step_id is provided, or user types text, use the Brain
+
     if not user_msg:
          return JSONResponse(content={"response": "I didn't catch that. Could you type it again?"})
 
