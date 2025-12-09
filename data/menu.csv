@@ -1,0 +1,33 @@
+Step_ID,Bot_Message,User_Choice,Next_Step_ID
+start,Welcome to AccessPlus Assistant. How would you like to proceed?,Personal Banking,personal_menu
+start,Welcome to AccessPlus Assistant. How would you like to proceed?,Business Banking,business_menu
+start,Welcome to AccessPlus Assistant. How would you like to proceed?,Chat with Agent,agent_handover
+personal_menu,Personal Banking Solutions:,Accounts & Deposits,accounts_node
+personal_menu,Personal Banking Solutions:,Credit Cards,cards_node
+personal_menu,Personal Banking Solutions:,Loans,loans_node
+personal_menu,Personal Banking Solutions:,« Back,start
+accounts_node,Select an Account Type:,Savings Accounts,savings_info
+accounts_node,Select an Account Type:,Bedaya (Easy Open),bedaya_info
+accounts_node,Select an Account Type:,« Back,personal_menu
+savings_info,AccessPlus Savings Accounts offer competitive interest rates.,View Rates Online,https://www.AccessPluseg.com/en/personal/accounts-and-deposits/savings-accounts
+savings_info,AccessPlus Savings Accounts offer competitive interest rates.,Chat with Agent,agent_handover
+savings_info,AccessPlus Savings Accounts offer competitive interest rates.,« Back,accounts_node
+bedaya_info,Bedaya requires only a National ID to open.,Apply Now,https://www.AccessPluseg.com/en/personal/accounts-and-deposits/bedaya
+bedaya_info,Bedaya requires only a National ID to open.,« Back,accounts_node
+cards_node,Choose a Card Category:,Credit Cards,credit_cards
+cards_node,Choose a Card Category:,Debit Cards,debit_cards
+cards_node,Choose a Card Category:,« Back,personal_menu
+credit_cards,Popular Credit Cards:,Cashback Card,card_cashback
+credit_cards,Popular Credit Cards:,Titanium Miles,card_titanium
+credit_cards,Popular Credit Cards:,« Back,cards_node
+card_cashback,Get up to 5% Cash Back on daily spend.,Chat with Agent,agent_handover
+card_cashback,Get up to 5% Cash Back on daily spend.,« Back,credit_cards
+loans_node,We finance your dreams:,Personal Loan,loan_personal
+loans_node,We finance your dreams:,Car Loan,loan_car
+loans_node,We finance your dreams:,« Back,personal_menu
+loan_personal,Loans up to 3M EGP. Need help calculating?,Chat with Agent,agent_handover
+loan_personal,Loans up to 3M EGP. Need help calculating?,« Back,loans_node
+business_menu,Business Banking:,SME Finance,sme_info
+business_menu,Business Banking:,Business Online,biz_online
+business_menu,Business Banking:,« Back,start
+agent_handover,I am connecting you to our AI Specialist. Please type your question below.,,

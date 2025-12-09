@@ -23,7 +23,21 @@
     <div class="chat-box" id="chat-box">
         <!-- Messages will appear here -->
         <!-- <div class="message bot-msg intro">Hello! How can I help you today?</div> -->
-        <div class=" intro"><h2>Welcome to AccessPlus...</h2><h1>How can I help you today?</h1></div>
+        <div class=" intro">
+                <!-- Initial Message from Server Logic -->
+                <div class="intro-container">
+                    <h1 class="intro">{{ initial_message }}</h1>
+                </div>
+                
+                <!-- Initial Options -->
+                <div class="options-container" id="options-container">
+                    {% for opt in initial_options %}
+                        <button class="option-btn" onclick="handleOptionClick('{{ opt.label }}', '{{ opt.next_step }}')">
+                            {{ opt.label }}
+                        </button>
+                    {% endfor %}
+                </div>
+        </div>
     </div>
    <div class="chat-bottom">
      <div class="input-area">
@@ -44,65 +58,124 @@
 </div>
 
 
-
 <script>
-    async function sendMessage() {
-        const inputField = document.getElementById("user-input");
-        const chatBox = document.getElementById("chat-box");
-        const sendBtn = document.getElementById("send-btn");
-        const message = inputField.value.trim();
+    const chatBox = document.getElementById("chat-box");
+    const userInput = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
 
-        if (!message) return;
+    // 1. Handle Button Clicks (CSV Flow)
+    async function handleOptionClick(label, nextStepId) {
+        // If it's a URL, open it
+        if (nextStepId.startsWith("http")) {
+            window.open(nextStepId, '_blank');
+            return;
+        }
 
-        // 1. Add User Message to UI
-        addMessage(message, 'user-msg');
-        inputField.value = "";
-        sendBtn.disabled = true;
+        // Add User Selection to Chat
+        addMessage(label, 'user-msg');
+        
+        // Remove old buttons to prevent re-clicking
+        removeOldButtons();
+
+        // Send request to backend with specific Step ID
+        await fetchResponse({ current_step_id: nextStepId });
+    }
+
+    // 2. Handle Text Input (AI Flow)
+    async function sendTextMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        addMessage(text, 'user-msg');
+        userInput.value = "";
+        toggleSendBtn();
+
+        // Remove old buttons if user decides to type instead
+        removeOldButtons();
+
+        // Send request with message text
+        await fetchResponse({ message: text });
+    }
+
+    // Core Fetch Logic
+    async function fetchResponse(payload) {
+        // Show typing indicator (optional)
+        const loadingDiv = document.createElement("div");
+        loadingDiv.className = "message bot-msg loading";
+        loadingDiv.innerText = "...";
+        chatBox.appendChild(loadingDiv);
 
         try {
-            // 2. Send to Flask Backend
-            const response = await fetch('chat', {
+            const response = await fetch('/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: message })
+                body: JSON.stringify(payload)
             });
             const data = await response.json();
 
-            // 3. Add Bot Response to UI
-            if (data.error) {
-                addMessage("Error: " + data.error, 'bot-msg');
-            } else {
-                addMessage(data.response, 'bot-msg');
-            }
-        } catch (error) {
-            addMessage("Network Error", 'bot-msg');
-        }
+            // Remove loading
+            chatBox.removeChild(loadingDiv);
 
-        sendBtn.disabled = false;
+            // Add Bot Message
+            addMessage(data.response, 'bot-msg');
+
+            // Render Options if available
+            if (data.options && data.options.length > 0) {
+                renderOptions(data.options);
+            }
+
+        } catch (error) {
+            if(loadingDiv.parentNode) chatBox.removeChild(loadingDiv);
+            addMessage("Network Error. Please try again.", 'bot-msg');
+        }
     }
 
     function addMessage(text, className) {
-        const chatBox = document.getElementById("chat-box");
         const div = document.createElement("div");
         div.classList.add("message", className);
-        div.innerText = text;
+        div.innerText = text; // Secure text insertion
         chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll to bottom
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function renderOptions(options) {
+        const container = document.createElement("div");
+        container.className = "options-container active-options";
+        
+        options.forEach(opt => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.innerText = opt.label;
+            btn.onclick = () => handleOptionClick(opt.label, opt.next_step);
+            container.appendChild(btn);
+        });
+        
+        chatBox.appendChild(container);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function removeOldButtons() {
+        const oldContainers = document.querySelectorAll('.active-options');
+        oldContainers.forEach(el => el.remove());
+        
+        // Also remove the initial jinja rendered buttons if they exist
+        const initOpts = document.getElementById("options-container");
+        if(initOpts) initOpts.style.display = 'none';
     }
 
     function handleEnter(event) {
-        if (event.key === "Enter") sendMessage();
+        if (event.key === "Enter") sendTextMessage();
     }
 
-const messageInput = document.getElementById("user-input");
-const sendBtn = document.getElementById("send-btn");
- messageInput.addEventListener("input", () => {
-    if (messageInput.value.trim() === "") {
-        sendBtn.disabled = true;
-    } else {
-        sendBtn.disabled = false;
+    function toggleSendBtn() {
+        if (userInput.value.trim() === "") {
+            sendBtn.classList.add("disabled");
+        } else {
+            sendBtn.classList.remove("disabled");
+        }
     }
-});
+
+    userInput.addEventListener("input", toggleSendBtn);
 </script>
 
 

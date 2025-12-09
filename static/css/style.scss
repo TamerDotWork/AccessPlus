@@ -86,7 +86,7 @@ body {
   
     color: #fff;
     line-height: 2rem;
- padding: 0px 24px 0px 32px;
+//  padding: 0px 24px 0px 32px;
   background-image:linear-gradient(315deg, #FFFFFF 90%, #ababab 100%);
   background-clip: text;
   -webkit-background-clip: text;
@@ -255,4 +255,15 @@ position: relative;
         transform: translateY(0);
         /* Final position, on screen */
     }
+}
+
+.option-btn{
+    /* From https://css.glass */
+background: rgba(255, 255, 255, 0.2);
+border-radius: 16px;
+box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+backdrop-filter: blur(5px);
+-webkit-backdrop-filter: blur(5px);
+border: 1px solid rgba(255, 255, 255, 0.3);    color: #fff;
+    margin-right: 8px;
 }

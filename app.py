@@ -1,40 +1,76 @@
-
-# ------------------ app.py ------------------
-"""
-FastAPI wrapper with pre/post sanitization and safe handling of responses.
-- Cleans user input
-- Detects prompt injection and rejects it
-- Calls the graph and returns sanitized result
-- Provides hook for human-in-the-loop approval for high-risk requests (placeholder)
-"""
-
+import csv
+import os
+from collections import defaultdict
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from typing import Optional, List
 from langchain_core.messages import HumanMessage
-from brain import app_graph, sanitize_user_input, detect_prompt_injection, post_process_response
 import uvicorn
-import logging
 
-logger = logging.getLogger("banking_app")
+# Import the compiled graph from brain.py
+from brain import app_graph
 
 app = FastAPI()
+
 templates = Jinja2Templates(directory="templates")
+
+# Ensure static directory exists
+if not os.path.exists("static"):
+    os.makedirs("static")
+if not os.path.exists("static/css"):
+    os.makedirs("static/css")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Quick rate limiter placeholder (implement Redis or token-bucket in prod)
-from collections import defaultdict
-RATE_LIMIT = defaultdict(int)
-RATE_LIMIT_THRESHOLD = 30  # very naive
+# ---------------------------------------------------------
+# 1. LOAD CSV LOGIC
+# ---------------------------------------------------------
+FLOW_TREE = defaultdict(dict)
+
+def load_csv_flow():
+    """Parses the CSV into a dictionary for fast lookup."""
+    global FLOW_TREE
+    csv_path = "data/menu.csv"
+    
+    if not os.path.exists(csv_path):
+        print("Warning: menu.csv not found.")
+        return
+
+    with open(csv_path, mode='r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            step_id = row['Step_ID'].strip()
+            msg = row['Bot_Message'].strip()
+            choice = row['User_Choice'].strip()
+            next_id = row['Next_Step_ID'].strip()
+
+            if step_id not in FLOW_TREE:
+                FLOW_TREE[step_id] = {"message": msg, "options": []}
+            
+            # If the CSV row has choices, add them
+            if choice:
+                FLOW_TREE[step_id]["options"].append({
+                    "label": choice,
+                    "next_step": next_id
+                })
+
+# Load immediately on startup
+load_csv_flow()
+
+# ---------------------------------------------------------
+# 2. DATA MODELS & HELPERS
+# ---------------------------------------------------------
 
 class ChatRequest(BaseModel):
-    message: str
+    message: Optional[str] = ""
     session_id: str = "user_session_101"
+    current_step_id: Optional[str] = None  # Tracks CSV flow state
 
-# Helper: clean response content - accepts string or structured content
 def clean_content(content):
+    """Helper to extract clean text from LangChain message."""
     if isinstance(content, str):
         return content
     if isinstance(content, list):
@@ -47,64 +83,74 @@ def clean_content(content):
         return " ".join(text_parts)
     return str(content)
 
-# Simple heuristic to decide if response contains an action that needs human approval
-HIGH_RISK_KEYWORDS = ["transfer", "send money", "wire", "delete account", "close account"]
-
-def needs_human_approval(user_input: str) -> bool:
-    ui = user_input.lower()
-    return any(k in ui for k in HIGH_RISK_KEYWORDS)
+# ---------------------------------------------------------
+# 3. ENDPOINTS
+# ---------------------------------------------------------
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    # Pass the 'start' step data to render initial buttons if needed
+    start_data = FLOW_TREE.get("start", {})
+    return templates.TemplateResponse("index.html", {
+        "request": request, 
+        "initial_message": start_data.get("message", "Welcome!"),
+        "initial_options": start_data.get("options", [])
+    })
 
 @app.post("/chat")
 async def chat_endpoint(chat_request: ChatRequest):
-    raw_user_message = chat_request.message or ""
+    user_msg = chat_request.message.strip()
+    step_id = chat_request.current_step_id
     thread_id = chat_request.session_id
 
-    # Rate limiting (naive)
-    RATE_LIMIT[thread_id] += 1
-    if RATE_LIMIT[thread_id] > RATE_LIMIT_THRESHOLD:
-        return JSONResponse(content={"error": "Rate limit exceeded."}, status_code=429)
+    # --- SCENARIO A: CSV FLOW NAVIGATION ---
+    # If the request contains a step_id (from a button click), prioritize CSV logic
+    if step_id and step_id in FLOW_TREE:
+        node_data = FLOW_TREE[step_id]
+        
+        # Check if this is a "Handover" node (switch to AI)
+        if step_id == "agent_handover":
+             return JSONResponse(content={
+                "response": node_data['message'],
+                "options": [], # No buttons, enable text input
+                "next_step": None # Exit CSV flow
+            })
 
-    # Pre-processing & sanitization
-    user_message = sanitize_user_input(raw_user_message)
-    if not user_message:
-        return JSONResponse(content={"response": "Please type a valid message."})
+        return JSONResponse(content={
+            "response": node_data['message'],
+            "options": node_data['options'],
+            "next_step": None # The frontend will send the *next* ID when clicked
+        })
 
-    # Detect prompt injection
-    if detect_prompt_injection(user_message):
-        logger.warning(f"Prompt injection attempt blocked for session {thread_id}")
-        return JSONResponse(content={"response": "Unsafe input detected — please rephrase."})
-
-    # If this is a high-risk request, mark for manual approval and do NOT execute
-    if needs_human_approval(user_message):
-        # Placeholder: push to human queue, store audit entry in DB, return pending message
-        logger.info(f"High-risk request routed to human for session {thread_id}")
-        # In production: create a task for ops, notify via channel, wait for approve
-        return JSONResponse(content={"response": "This action requires manual approval. We have created a request and will follow up."})
+    # --- SCENARIO B: AI AGENT (LangGraph) ---
+    # If no step_id is provided, or user types text, use the Brain
+    if not user_msg:
+         return JSONResponse(content={"response": "I didn't catch that. Could you type it again?"})
 
     try:
-        input_msg = HumanMessage(content=user_message)
+        input_msg = HumanMessage(content=user_msg)
         config = {"configurable": {"thread_id": thread_id}}
+        
         result = app_graph.invoke({"messages": [input_msg]}, config=config)
 
-        raw_content = result['messages'][-1].content
-        final_response = clean_content(raw_content)
+        if result and "messages" in result and len(result["messages"]) > 0:
+            last_msg = result['messages'][-1]
+            final_response = clean_content(last_msg.content)
+        else:
+            final_response = "I encountered an error connecting to the bank systems."
 
-        # extra post-processing / redaction on server-side
-        final_response = post_process_response(final_response)
-
-        # Audit log (in real system, write to DB or tamper-evident store)
-        logger.info(f"Chat response for {thread_id}: {final_response}")
-
-        return JSONResponse(content={"response": final_response})
+        # Return standard response (no flow options)
+        return JSONResponse(content={
+            "response": final_response,
+            "options": [],
+            "next_step": None
+        })
 
     except Exception as e:
-        logger.exception("Server Error in chat_endpoint")
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        print(f"❌ Server Error: {e}")
+        return JSONResponse(content={"response": "System Error: The banking assistant is currently unavailable."})
+
 
 if __name__ == "__main__":
-    # Run with command: python app.py
+    print("🚀 Server running on http://127.0.0.1:5000")
     uvicorn.run("app:app", host="0.0.0.0", port=5000, reload=True)
