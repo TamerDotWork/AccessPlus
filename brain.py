@@ -9,6 +9,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.graph import StateGraph, END, START, MessagesState
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langgraph.checkpoint.memory import MemorySaver 
+from langsmith import traceable
 
 # --- DO NOT IMPORT 'app' or 'brain' HERE ---
 from tools import get_my_balance, get_my_transactions, get_bank_policies
@@ -38,7 +39,7 @@ info_agent = create_react_agent(llm, tools=[get_bank_policies])
 ACCOUNT_SYS = "You are an Account Manager. Use tools for balances/transactions. Refuse non-banking queries."
 INFO_SYS = "You are a Bank Consultant. Answer fees/rates/hours. You CANNOT access accounts. Refuse non-banking queries."
 
-# --- NODES ---
+@traceable
 def guardian_node(state: MessagesState):
     """Firewall Node with Crash Prevention."""
     last_msg = state['messages'][-1]
@@ -61,7 +62,7 @@ def guardian_node(state: MessagesState):
         decision = GuardianOutput(is_allowed=False, reason="System safety check failed.")
     
     return {"guardian_decision": decision}
-
+@traceable
 def router_node(state: MessagesState):
     """Router Node with Crash Prevention."""
     messages = state['messages']
@@ -85,17 +86,17 @@ def router_node(state: MessagesState):
     
     print(f"🚦 Routing to: {decision.destination}")
     return {"next": decision.destination}
-
+@traceable
 def call_account(state: MessagesState):
     msg = [SystemMessage(content=ACCOUNT_SYS)] + state['messages']
     res = account_agent.invoke({"messages": msg})
     return {"messages": [res['messages'][-1]]}
-
+@traceable
 def call_info(state: MessagesState):
     msg = [SystemMessage(content=INFO_SYS)] + state['messages']
     res = info_agent.invoke({"messages": msg})
     return {"messages": [res['messages'][-1]]}
-
+@traceable
 def call_block(state: MessagesState):
     return {"messages": [AIMessage(content="I cannot assist with that request. Please ask about banking.")]}
 
@@ -113,7 +114,7 @@ workflow.add_node("info_bot", call_info)
 workflow.add_node("block_bot", call_block)
 
 workflow.set_entry_point("guardian")
-
+@traceable
 def route_guardian(state: AgentState):
     if state.get("guardian_decision") and state["guardian_decision"].is_allowed:
         return "router"

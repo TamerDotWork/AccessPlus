@@ -27,7 +27,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 FLOW_TREE = defaultdict(dict)
-
+@traceable
 def load_csv_flow():
     """Parses the CSV into a dictionary for fast lookup."""
     global FLOW_TREE
@@ -64,7 +64,7 @@ class ChatRequest(BaseModel):
     message: Optional[str] = ""
     session_id: str = "user_session_101"
     current_step_id: Optional[str] = None  
-
+@traceable
 def clean_content(content):
     """Helper to extract clean text from LangChain message."""
     if isinstance(content, str):
