@@ -267,3 +267,16 @@ backdrop-filter: blur(5px);
 border: 1px solid rgba(255, 255, 255, 0.3);    color: #fff;
     margin-right: 8px;
 }
+
+
+/* media */
+
+@media screen and (max-width: 768px) {
+    body{
+flex-direction: column;
+    }
+    .container{
+        flex-direction: column;
+    }
+    
+}
