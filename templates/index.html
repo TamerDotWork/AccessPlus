@@ -104,7 +104,7 @@
         loadingDiv.className = "message bot-msg loading";
         loadingDiv.innerText = "Is typing...";
         chatBox.appendChild(loadingDiv);
-
+        chatBox.scrollTop = chatBox.scrollHeight;
         try {
             const response = await fetch('chat', {
                 method: 'POST',
