@@ -102,7 +102,7 @@
         // Show typing indicator (optional)
         const loadingDiv = document.createElement("div");
         loadingDiv.className = "message bot-msg loading";
-        loadingDiv.innerText = "Is typing...";
+        loadingDiv.innerHTML = "<div class='typing-indicator'><span></span><span></span><span></span></div> Is typing...";
         chatBox.appendChild(loadingDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
         try {
