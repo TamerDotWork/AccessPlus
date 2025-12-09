@@ -45,15 +45,15 @@ def guardian_node(state: MessagesState):
     last_msg = state['messages'][-1]
     
     prompt = (
-        "You are a Banking Gateway Security System. Your job is to filter user messages.\n"
-        "Analyze the user's input and decide if it is related to banking, finance, or account management.\n\n"
-        "CRITERIA FOR 'is_allowed' (True):\n"
-        "- Account inquiries (e.g., 'my balance', 'how much money', 'transactions').\n"
-        "- General banking questions (e.g., 'fees', 'interest rates', 'hours').\n"
-        "- Greetings (e.g., 'hi', 'hello').\n\n"
-        "CRITERIA FOR 'is_allowed' (False):\n"
-        "- General knowledge questions (e.g., 'capital of France', 'python code').\n"
-        "- Creative writing, recipes, or personal advice unrelated to money.\n\n"
+        "You are a Banking Gateway Security System. Your job is to filter user messages."
+        "Analyze the user's input and decide if it is related to banking, finance, or account management."
+        "CRITERIA FOR 'is_allowed' (True):"
+        "- Account inquiries (e.g., 'my balance', 'how much money', 'transactions')."
+        "- General banking questions (e.g., 'fees', 'interest rates', 'hours')."
+        "- Greetings (e.g., 'hi', 'hello')."
+        "CRITERIA FOR 'is_allowed' (False):"
+        "- General knowledge questions (e.g., 'capital of France', 'python code')."
+        "- Creative writing, recipes, or personal advice unrelated to money."
         "Provide a clear 'reason' for your decision."
     )
     
@@ -75,14 +75,14 @@ def router_node(state: MessagesState):
     messages = state['messages']
     
     prompt = (
-        "You are a Banking Router. Route the user message to the correct specialist agent.\n\n"
-        "DESTINATION RULES:\n"
-        "1. 'account_bot': STRICTLY for personal/private account data.\n"
-        "   - Use for: 'my balance', 'my transactions', 'did I spend money at X', 'transfer money'.\n"
-        "   - The user is asking about THEIR specific money.\n\n"
-        "2. 'info_bot': STRICTLY for general/public bank policies.\n"
-        "   - Use for: 'what are the fees', 'interest rates', 'opening hours', 'how do I open an account'.\n"
-        "   - The user is asking about the BANK, not their specific money.\n"
+        "You are a Banking Router. Route the user message to the correct specialist agent."
+        "DESTINATION RULES:"
+        "1. 'account_bot': STRICTLY for personal/private account data."
+        "   - Use for: 'my balance', 'my transactions', 'did I spend money at X', 'transfer money'."
+        "   - The user is asking about THEIR specific money."
+        "2. 'info_bot': STRICTLY for general/public bank policies."
+        "   - Use for: 'what are the fees', 'interest rates', 'opening hours', 'how do I open an account'."
+        "   - The user is asking about the BANK, not their specific money."
     )
     
     try:
