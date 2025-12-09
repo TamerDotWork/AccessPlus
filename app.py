@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from langchain_core.messages import HumanMessage
 import uvicorn
-
+from langsmith import traceable
 
 from brain import app_graph
 
