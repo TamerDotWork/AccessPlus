@@ -55,9 +55,7 @@ def load_csv_flow():
                     "next_step": next_id
                 })
 
-
 load_csv_flow()
-
 
 
 class ChatRequest(BaseModel):
@@ -78,7 +76,6 @@ def clean_content(content):
                 text_parts.append(str(part))
         return " ".join(text_parts)
     return str(content)
-
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -144,5 +141,4 @@ async def chat_endpoint(chat_request: ChatRequest):
 
 
 if __name__ == "__main__":
-    print("🚀 Server running on http://127.0.0.1:5009")
     uvicorn.run("app:app", host="0.0.0.0", port=5009, reload=True)

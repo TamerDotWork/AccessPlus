@@ -11,7 +11,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langgraph.checkpoint.memory import MemorySaver 
 from langsmith import traceable
 
-# --- DO NOT IMPORT 'app' or 'brain' HERE ---
+
 from tools import get_my_balance, get_my_transactions, get_bank_policies
 
 load_dotenv()
@@ -24,7 +24,7 @@ llm = ChatGoogleGenerativeAI(
     temperature=0
 )
 
-# --- DATA MODELS ---
+
 class GuardianOutput(BaseModel):
     is_allowed: bool = Field(..., description="True if banking related, False otherwise.")
     reason: str = Field(..., description="Reason for decision.")
@@ -32,7 +32,7 @@ class GuardianOutput(BaseModel):
 class RouterOutput(BaseModel):
     destination: Literal["account_bot", "info_bot"] = Field(..., description="Target agent.")
 
-# --- AGENTS ---
+
 account_agent = create_react_agent(llm, tools=[get_my_balance, get_my_transactions])
 info_agent = create_react_agent(llm, tools=[get_bank_policies])
 
@@ -100,7 +100,7 @@ def call_info(state: MessagesState):
 def call_block(state: MessagesState):
     return {"messages": [AIMessage(content="I cannot assist with that request. Please ask about banking.")]}
 
-# --- WORKFLOW ---
+
 class AgentState(MessagesState):
     guardian_decision: GuardianOutput
     next: str
@@ -129,6 +129,5 @@ workflow.add_edge("block_bot", END)
 
 memory = MemorySaver()
 
-# This variable is exported so app.py can import it.
-# DO NOT import app_graph inside this file.
+
 app_graph = workflow.compile(checkpointer=memory)
