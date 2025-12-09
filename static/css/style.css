@@ -244,5 +244,8 @@
 	 .container {
 		 flex-direction: column;
 	}
+    .chat-header {
+    padding-left: 15px;
+}
 }
  
