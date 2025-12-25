@@ -6,50 +6,72 @@ import sys
 
 # 1. Setup Logging
 logging.basicConfig(level=logging.INFO, format='[🛡️ GATEWAY] %(message)s')
-
-# 2. Fix the Google Warning
-#    This line hides the "All support for google.generativeai has ended" message
 warnings.filterwarnings("ignore", category=FutureWarning, module="google.generativeai")
 
+# --- PART A: GOOGLE/LANGCHAIN PATCHER ---
 def patch_google_sdk():
-    """Patches Google GenAI (works for both Old and New SDKs)"""
-    
-    # Check if the library is installed
     if importlib.util.find_spec("google.generativeai") is None:
         return
 
     try:
         import google.generativeai as genai
-        
-        # Avoid double-patching
         if getattr(genai.GenerativeModel.generate_content, "_is_governed", False):
             return
 
         original_fn = genai.GenerativeModel.generate_content
 
         def governed_generate_content(self, contents, *args, **kwargs):
-            # --- GOVERNANCE ---
-            logging.info(f"Intercepted Prompt: {str(contents)[:50]}...")
-            
-            # Policy Example: Block the word "secret"
-            if "secret" in str(contents).lower():
-                logging.error("BLOCKED: Policy Violation")
-                raise ValueError("Sensitive data detected in prompt.")
+            prompt_str = str(contents)
+            logging.info(f"Intercepted Prompt: {prompt_str[:50]}...")
 
-            # --- EXECUTE ---
-            response = original_fn(self, contents, *args, **kwargs)
+            # Policy: Block 'bomb'
+            if "bomb" in prompt_str.lower():
+                logging.error("🚫 BLOCKED: Security Policy Violation")
+                raise ValueError("Security Policy: Request Blocked.")
 
-            # --- MONITOR ---
-            logging.info("Response received successfully.")
-            return response
+            # Policy: Redact 'secret'
+            if "secret" in prompt_str.lower():
+                logging.warning("⚠️ REDACTING sensitive info")
+                if isinstance(contents, str):
+                    contents = contents.replace("secret", "[REDACTED]")
+                elif isinstance(contents, list):
+                    contents = [str(c).replace("secret", "[REDACTED]") for c in contents]
 
-        # Apply Patch
+            return original_fn(self, contents, *args, **kwargs)
+
         governed_generate_content._is_governed = True
         genai.GenerativeModel.generate_content = governed_generate_content
-        logging.info("✅ Agent Attached: Governance Active")
-        
-    except Exception as e:
-        logging.warning(f"Agent failed to attach: {e}")
+        logging.info("✅ Google/LangChain Instrumented")
 
-# Run the patcher immediately when this file is imported
+    except Exception as e:
+        logging.warning(f"Failed to patch Google: {e}")
+
+# --- PART B: UVICORN PATCHER (Fixes the reload=True issue) ---
+def patch_uvicorn():
+    """
+    Intercepts uvicorn.run to disable 'reload'.
+    This allows us to govern the app without changing app.py source code.
+    """
+    if importlib.util.find_spec("uvicorn") is None:
+        return
+
+    import uvicorn
+    
+    # Save the original run function
+    original_run = uvicorn.run
+
+    def governed_run(*args, **kwargs):
+        # Check if user tried to enable reload
+        if kwargs.get('reload') is True:
+            logging.warning("⚠️  Governance overrides: Disabling 'reload' to ensure security monitoring.")
+            kwargs['reload'] = False
+        
+        return original_run(*args, **kwargs)
+
+    # Apply the patch
+    uvicorn.run = governed_run
+    logging.info("✅ Uvicorn Instrumented (Auto-Reload disabled for safety)")
+
+# Run Patches
+patch_uvicorn()
 patch_google_sdk()
